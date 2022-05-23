@@ -13,7 +13,11 @@ def tf_idf(bags: np.ndarray) -> np.ndarray:
     N = np.size(bags, axis=0)
     idf = np.log2(N) - np.log2(appears)
     tfidf = tf * idf
-    return tfidf, totalText, idf
+    return tfidf
+
+
+def wordWeights(bags: np.ndarray) -> np.ndarray:
+    return np.mean(tf_idf(bags), axis=0)
 
 
 if __name__ == '__main__':
@@ -23,4 +27,5 @@ if __name__ == '__main__':
             [0, 5, 8]
         ]
     )
-    print(tf_idf(gg))
+    print(f"The tfidf of {gg} is {tf_idf(gg)}")
+    print(f"The weights are {wordWeights(gg)}")
