@@ -9,7 +9,7 @@ def initPopulation(size: int, P: float = 0.5) -> narr:
     return np.random.rand(size, 8520) < P
 
 
-def evalPopulation(pop: narr, weights: narr, maxPunish: float) -> narr:
+def fitnessScore(pop: narr, weights: narr, maxPunish: float) -> narr:
     # get average tfidf score of words in each member
     wordScore = np.mean(pop * weights, axis=1)
     # calculate punishment for ammount of words over minimum
@@ -18,8 +18,12 @@ def evalPopulation(pop: narr, weights: narr, maxPunish: float) -> narr:
     return wordScore - punishment
 
 
-def chooseSurvivors(pop: narr, scores: narr) -> narr:
-    pass
+# chooces survivors based on fitness score
+def chooseSurvivors(scores: narr, Nsurv: int) -> narr:
+    probs = scores / np.sum(scores)
+    rng = np.random.default_rng()
+    survivors = rng.choice(np.size(scores), Nsurv, p=probs)
+    return survivors
 
 
 def breedPair(pair: narr) -> narr:

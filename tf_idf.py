@@ -16,16 +16,16 @@ def tf_idf(bags: np.ndarray) -> np.ndarray:
     return tfidf
 
 
-def wordWeights(bags: np.ndarray) -> np.ndarray:
+def avgTfIdf(bags: np.ndarray) -> np.ndarray:
     return np.mean(tf_idf(bags), axis=0)
 
 
 if __name__ == '__main__':
     gg = np.array(
         [
-            [1, 0, 3],
+            [3, 0, 3],
             [0, 5, 8]
         ]
     )
     print(f"The tfidf of {gg} is {tf_idf(gg)}")
-    print(f"The weights are {wordWeights(gg)}")
+    print(f"The weights are {avgTfIdf(gg)}")
