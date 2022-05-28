@@ -3,6 +3,7 @@
 import numpy as np
 
 narr = np.ndarray
+ngen = np.random._generator.Generator
 
 
 def initPopulation(size: int, P: float = 0.5) -> narr:
@@ -18,11 +19,12 @@ def fitnessScore(pop: narr, weights: narr, maxPunish: float) -> narr:
     return wordScore - punishment
 
 
-# chooces survivors based on fitness score
-def chooseSurvivors(scores: narr, Nsurv: int) -> narr:
+# roulete based on score
+def chooseSurvivors(scores: narr, rng) -> narr:
     probs = scores / np.sum(scores)
     rng = np.random.default_rng()
-    survivors = rng.choice(np.size(scores), Nsurv, p=probs)
+    popN = np.size(scores)
+    survivors = rng.choice(popN, popN, p=probs)
     return survivors
 
 
