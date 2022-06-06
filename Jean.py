@@ -67,11 +67,6 @@ def next_generation(pop: narr,
     return children, scores
 
 
-# Check if stopping conditions are met
-def stopping(scores: narr) -> bool:
-    return False
-
-
 # for given parameters run genetic algorithm
 # untill stopping condition is met and return final population
 # and scores over the generations
@@ -81,12 +76,17 @@ def train(pop_size: int, p_breed: float, p_mut: float,
     pop = init_population(pop_size)
     history = []
     scores = evaluator(pop)
+    old_scores = scores
+    gen_count = 0
+    max_gens = 1000
     breeder = partial(breed_survivors, P=p_breed)
     mutator = partial(mutate, P=p_mut)
     next_gen = partial(next_generation,
                        breeder=breeder, mutator=mutator,
                        evaluator=evaluator)
-    while (not stopping(scores)):
+    while (scores >= old_scores and gen_count < max_gens):
+        gen_count += 1
+        old_scores = scores
         pop, scores = next_gen(pop)
         history.append(scores)
     return pop, history
