@@ -5,12 +5,14 @@ import numpy as np
 narr = np.ndarray
 ngen = np.random._generator.Generator
 
+rng = np.random.default_rng()
 
-def initPopulation(size: int, P: float = 0.5) -> narr:
+
+def init_population(size: int, P: float = 0.5) -> narr:
     return np.random.rand(size, 8520) < P
 
 
-def fitnessScore(pop: narr, weights: narr, maxPunish: float) -> narr:
+def fitness_score(pop: narr, weights: narr, maxPunish: float) -> narr:
     # get average tfidf score of words in each member
     wordScore = np.mean(pop * weights, axis=1)
     # calculate punishment for ammount of words over minimum
@@ -20,17 +22,27 @@ def fitnessScore(pop: narr, weights: narr, maxPunish: float) -> narr:
 
 
 # roulete based on score
-def chooseSurvivors(scores: narr, rng) -> narr:
+def survivor_index(scores: narr) -> narr:
     probs = scores / np.sum(scores)
-    rng = np.random.default_rng()
     popN = np.size(scores)
     survivors = rng.choice(popN, popN, p=probs)
     return survivors
 
 
-def breedPair(pair: narr) -> narr:
-    pass
+def survivor_population(pop: narr, idx: narr) -> narr:
+    return pop[idx]
 
 
-def breedSurvivors(pop: narr, P: float = 0.6) -> narr:
-    pass
+def breed_survivors(pop: narr, P: float = 0.6) -> narr:
+    pair_num = rng.binomial(np.size(pop, axis=0), P) // 2
+    parents1 = pop[0:pair_num]
+    parents2 = pop[pair_num:pair_num * 2]
+    mask = init_population(pair_num)
+    child1 = np.choose(mask, (parents1, parents2))
+    child2 = np.choose(mask, (parents2, parents1))
+    return np.vstack((child1, child2, pop[pair_num * 2:]))
+
+
+def mutate(pop: narr, P: float = 0.01) -> narr:
+    mask = init_population(pop.shape[0], P)
+    return pop ^ mask
