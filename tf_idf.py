@@ -20,6 +20,12 @@ def avgTfIdf(bags: np.ndarray) -> np.ndarray:
     return np.mean(tf_idf(bags), axis=0)
 
 
+def save_weights():
+    train_bags = np.load("wordArray.npz")['arr_0']
+    tfidf_weights = avgTfIdf(train_bags)
+    np.savez_compressed('tfidf_weights', a=tfidf_weights)
+
+
 if __name__ == '__main__':
     gg = np.array(
         [
