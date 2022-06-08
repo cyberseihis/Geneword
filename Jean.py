@@ -10,8 +10,13 @@ ngen = np.random._generator.Generator
 rng = np.random.default_rng()
 
 
-def init_population(size: int, P: float = 0.5) -> narr:
+def random_population(size: int, P: float = 0.5) -> narr:
     return np.random.rand(size, 8520) < P
+
+
+def first_gen(size: int) -> narr:
+    per_member = np.random.rand(size)
+    return np.vstack(np.random.rand(8520) < p for p in per_member)
 
 
 def fitness_score(pop: narr, weights: narr,
@@ -21,17 +26,15 @@ def fitness_score(pop: narr, weights: narr,
     wordScore = np.sum(pop * weights, axis=1) / word_count
     # calculate punishment for ammount of words over minimum
     wordCount = np.sum(pop, axis=1) - 1000
-    if(wordCount >= 0):
-        punishment = wordCount / (8520 - 1000) * legal_punish
-    else:
-        punishment = -wordCount * illegal_punish
+    punishment = np.max([wordCount / (8520 - 1000) * legal_punish,
+                        -wordCount * illegal_punish], axis=0)
     return wordScore - punishment
 
 
 # roulete based on score
 def roulete_score(scores: narr) -> narr:
     # remove lowest score from other scores
-    rebased = scores - np.min(scores)
+    rebased = scores - np.min(scores) + (np.max(scores) * 0.01)
     probs = rebased / np.sum(rebased)
     return probs
 
@@ -60,7 +63,7 @@ def breed_survivors(pop: narr, P: float = 0.6) -> narr:
     pair_num = rng.binomial(np.size(pop, axis=0), P) // 2
     parents1 = pop[0:pair_num]
     parents2 = pop[pair_num:pair_num * 2]
-    mask = init_population(pair_num)
+    mask = random_population(pair_num)
     child1 = np.choose(mask, (parents1, parents2))
     child2 = np.choose(mask, (parents2, parents1))
     return np.vstack((child1, child2, pop[pair_num * 2:]))
@@ -68,7 +71,7 @@ def breed_survivors(pop: narr, P: float = 0.6) -> narr:
 
 # Given a population return mutated population
 def mutate(pop: narr, P: float = 0.01) -> narr:
-    mask = init_population(pop.shape[0], P)
+    mask = random_population(pop.shape[0], P)
     return pop ^ mask
 
 
@@ -91,14 +94,15 @@ def next_generation(pop: narr,
 def train(pop_size: int, p_breed: float, p_mut: float,
           evaluator: Callable[[narr], narr],
           ) -> tuple[narr, list[float]]:
-    pop = init_population(pop_size)
+    pop = first_gen(pop_size)
     history = []
     scores = evaluator(pop)
     best_score = np.mean(scores)
     old_best = best_score
     gen_count = 0
     max_gens = 1000
-    survivor = partial(survive, evaluator=evaluator, score2prob=roulete_score)
+    survivor = partial(survive,
+                       evaluator=evaluator, score2prob=roulete_rank)
     breeder = partial(breed_survivors, P=p_breed)
     mutator = partial(mutate, P=p_mut)
     next_gen = partial(next_generation,
@@ -106,13 +110,13 @@ def train(pop_size: int, p_breed: float, p_mut: float,
                        survivor=survivor)
     # while (best_score >= old_best or gen_count < max_gens):
     while (gen_count < max_gens):
-        gen_count += 1
         old_best = best_score
         pop, scores = next_gen(pop)
         best_score = np.mean(scores)
         history.append(best_score)
         if(gen_count % 10 == 0):
-            print(f"{gen_count} $:{best_score}")
+            print(f"{gen_count} $:{best_score:.7f} #:{np.sum(pop[0])}")
+        gen_count += 1
     return pop, history
 
 
@@ -122,7 +126,7 @@ def batch_train(trainer: Callable[[], tuple[narr, list[float]]]):
 
 
 def main():
-    config_table = [[20, 0.6, 0], [20, 0.6, 0.01]]
+    config_table = [[20, 0.6, 0], [200, 0.6, 0.01]]
     # Created by save_weights of tf_idf.py
     weights = np.load("tfidf_weights.npz")['a']
     # max punish set to the tf_idf score of a member with
