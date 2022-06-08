@@ -14,19 +14,33 @@ def init_population(size: int, P: float = 0.5) -> narr:
     return np.random.rand(size, 8520) < P
 
 
-def fitness_score(pop: narr, weights: narr, maxPunish: float) -> narr:
+def fitness_score(pop: narr, weights: narr,
+                  legal_punish: float, illegal_punish: float) -> narr:
     # get average tfidf score of words in each member
     word_count = np.count_nonzero(pop, axis=1)
     wordScore = np.sum(pop * weights, axis=1) / word_count
     # calculate punishment for ammount of words over minimum
     wordCount = np.sum(pop, axis=1) - 1000
-    punishment = wordCount / (8520 - 1000) * maxPunish
+    if(wordCount >= 0):
+        punishment = wordCount / (8520 - 1000) * legal_punish
+    else:
+        punishment = -wordCount * illegal_punish
     return wordScore - punishment
 
 
 # roulete based on score
-def roulete(scores: narr) -> narr:
-    probs = scores / np.sum(scores)
+def roulete_score(scores: narr) -> narr:
+    # remove lowest score from other scores
+    rebased = scores - np.min(scores)
+    probs = rebased / np.sum(rebased)
+    return probs
+
+
+# roulete based on rank
+def roulete_rank(scores: narr) -> narr:
+    rank = np.ones(scores.size)
+    rank[np.argsort(scores)] = np.arange(scores.size)
+    probs = rank / np.sum(rank)
     return probs
 
 
@@ -80,20 +94,25 @@ def train(pop_size: int, p_breed: float, p_mut: float,
     pop = init_population(pop_size)
     history = []
     scores = evaluator(pop)
-    old_scores = scores
+    best_score = np.mean(scores)
+    old_best = best_score
     gen_count = 0
     max_gens = 1000
-    survivor = partial(survive, evaluator=evaluator, score2prob=roulete)
+    survivor = partial(survive, evaluator=evaluator, score2prob=roulete_score)
     breeder = partial(breed_survivors, P=p_breed)
     mutator = partial(mutate, P=p_mut)
     next_gen = partial(next_generation,
                        breeder=breeder, mutator=mutator,
                        survivor=survivor)
-    while (scores >= old_scores and gen_count < max_gens):
+    # while (best_score >= old_best or gen_count < max_gens):
+    while (gen_count < max_gens):
         gen_count += 1
-        old_scores = scores
+        old_best = best_score
         pop, scores = next_gen(pop)
-        history.append(np.mean(scores))
+        best_score = np.mean(scores)
+        history.append(best_score)
+        if(gen_count % 10 == 0):
+            print(f"{gen_count} $:{best_score}")
     return pop, history
 
 
@@ -110,7 +129,9 @@ def main():
     # all words selected, such that a member
     # with all words is scored 0
     evaluator = partial(fitness_score, weights=weights,
-                        maxPunish=np.mean(weights))
+                        legal_punish=np.mean(weights),
+                        illegal_punish=np.mean(weights))
     trainer = partial(train, evaluator=evaluator)
     # MISSING TENTRAINS
     my_trainers = (partial(trainer, x, y, z) for x, y, z in config_table)
+    return my_trainers
