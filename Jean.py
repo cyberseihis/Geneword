@@ -59,14 +59,33 @@ def survive(pop: narr,
 
 # Given a population select some of them for breeding and return
 # a population with the parents replaced by the children
-def breed_survivors(pop: narr, P: float = 0.6) -> narr:
-    pair_num = rng.binomial(np.size(pop, axis=0), P) // 2
-    parents1 = pop[0:pair_num]
-    parents2 = pop[pair_num:pair_num * 2]
-    mask = random_population(pair_num)
-    child1 = np.choose(mask, (parents1, parents2))
-    child2 = np.choose(mask, (parents2, parents1))
-    return np.vstack((child1, child2, pop[pair_num * 2:]))
+def breed(pop: narr,
+          crossover: Callable[[narr], narr], P: float = 0.6,) -> narr:
+    n_pairs = rng.binomial(np.size(pop, axis=0), P) // 2
+    parents = pop[0:n_pairs * 2]
+    return np.vstack((crossover(parents), pop[n_pairs * 2:]))
+
+
+def crossover_uniform(pop: narr) -> narr:
+    n_pairs = pop.shape[0] // 2
+    mask = random_population(n_pairs)
+    parents = np.array_split(pop, 2)
+    child1 = np.choose(mask, parents)
+    child2 = np.choose(~mask, parents)
+    return np.vstack((child1, child2))
+
+
+def crossover_single_pair(pair: narr):
+    cut_point = rng.integers(np.shape(pair)[1])
+    divided = np.hsplit(pair, cut_point)
+    children = np.hstack(divided[0], np.flipud(divided[1]))
+    return children
+
+
+def crossover_single(pop: narr) -> narr:
+    n_pairs = pop.shape[0] // 2
+    pairs = np.array_split(pop, n_pairs)
+    return np.vstack([crossover_single_pair(pair) for pair in pairs])
 
 
 # Given a population return mutated population
@@ -93,6 +112,7 @@ def next_generation(pop: narr,
 # and scores over the generations
 def train(pop_size: int, p_breed: float, p_mut: float,
           evaluator: Callable[[narr], narr],
+          crossover: Callable[[narr], narr],
           ) -> tuple[narr, list[float]]:
     pop = first_gen(pop_size)
     history = []
@@ -103,7 +123,7 @@ def train(pop_size: int, p_breed: float, p_mut: float,
     max_gens = 1000
     survivor = partial(survive,
                        evaluator=evaluator, score2prob=roulete_rank)
-    breeder = partial(breed_survivors, P=p_breed)
+    breeder = partial(breed, P=p_breed, crossover=crossover)
     mutator = partial(mutate, P=p_mut)
     next_gen = partial(next_generation,
                        breeder=breeder, mutator=mutator,
@@ -135,7 +155,7 @@ def main():
     evaluator = partial(fitness_score, weights=weights,
                         legal_punish=np.mean(weights),
                         illegal_punish=np.mean(weights))
-    trainer = partial(train, evaluator=evaluator)
+    trainer = partial(train, evaluator=evaluator, crossover=crossover_single)
     # MISSING TENTRAINS
     my_trainers = (partial(trainer, x, y, z) for x, y, z in config_table)
     return my_trainers

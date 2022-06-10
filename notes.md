@@ -1,2 +1,6 @@
-Are there libraries for genetic algorithms?
-If so, should I do it from scratch anyways?
+Implement elitism
+Imlement 2-point crossover
+Add concurency
+Move to colab so it runs faster?
+Complete 10 runs per config tuple script
+Start report
