@@ -1,12 +1,14 @@
 from Jean import main
+import pickle
 
 
 def test():
-    jj = main()
-    jg = next(jj)
-    jg = next(jj)
-    rep = jg()
+    ch, me = main()
+    print(ch)
+    print(len(me))
 
 
 if __name__ == '__main__':
-    test()
+    ch, me = main()
+    with open("genetics.pkl", 'wb') as fi:
+        pickle.dump((ch, me), fi)
