@@ -9,7 +9,7 @@ def fixup(hist):
 def meta2graph(meta):
     curve_dict = {i: hv.Curve(fixup(hist), "generation", "score")
                   for i, hist in enumerate(meta)}
-    return hv.NdOverlay(curve_dict, kdims="run").opts(show_legend=False)
+    return hv.NdOverlay(curve_dict, kdims="run")
 
 
 def get_graphs():
@@ -19,6 +19,7 @@ def get_graphs():
     meta_dict = {i: meta2graph(met) for i, met in complete_history.items()}
     big_graph = hv.HoloMap(meta_dict,
                            kdims=["Pop. size", "Pbreed", "Pmutate"])
+    big_graph.opts(hv.opts.NdOverlay(show_legend=False))
     hv.save(big_graph.layout(), 'big_graph.svg')
 
 
