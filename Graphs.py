@@ -20,6 +20,7 @@ def get_graphs():
     big_graph = hv.NdLayout(meta_dict,
                             kdims=["Pop. size", "Pbreed", "Pmutate"])
     big_graph.opts(hv.opts.NdOverlay(show_legend=False))
+    big_graph.cols(2)
     hv.save(big_graph, 'big_graph.svg')
 
 
