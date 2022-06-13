@@ -17,10 +17,10 @@ def get_graphs():
     with open("genetics.pkl", 'rb') as fi:
         ch, complete_history = pickle.load(fi)
     meta_dict = {i: meta2graph(met) for i, met in complete_history.items()}
-    big_graph = hv.HoloMap(meta_dict,
-                           kdims=["Pop. size", "Pbreed", "Pmutate"])
+    big_graph = hv.NdLayout(meta_dict,
+                            kdims=["Pop. size", "Pbreed", "Pmutate"])
     big_graph.opts(hv.opts.NdOverlay(show_legend=False))
-    hv.save(big_graph.layout(), 'big_graph.svg')
+    hv.save(big_graph, 'big_graph.svg')
 
 
 if __name__ == '__main__':
