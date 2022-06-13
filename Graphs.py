@@ -9,7 +9,7 @@ def fixup(hist):
 def meta2graph(meta):
     curve_dict = {i: hv.Curve(fixup(hist), "generation", "score")
                   for i, hist in enumerate(meta)}
-    return hv.NdOverlay(curve_dict, kdims="run")
+    return hv.NdOverlay(curve_dict, kdims="run").opts(show_legend=False)
 
 
 def get_graphs():
